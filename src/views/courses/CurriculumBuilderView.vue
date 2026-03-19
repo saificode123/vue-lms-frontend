@@ -9,7 +9,7 @@
       </div>
       <div class="flex space-x-3">
         <router-link
-          to="/dashboard"
+          to="/dashboard/courses"
           class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
         >
           Cancel
@@ -28,7 +28,15 @@
       </div>
     </div>
 
-    <div class="space-y-4">
+    <!-- Loading State -->
+    <div v-if="isLoading" class="flex items-center justify-center py-20">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-4 border-brand-500 border-t-transparent"
+      ></div>
+    </div>
+
+    <!-- Content -->
+    <div v-else class="space-y-4">
       <draggable
         v-model="sections"
         item-key="id"
@@ -184,26 +192,64 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import draggable from 'vuedraggable'
-// import apiClient from '../../lib/axios'; // We will use this when syncing to Laravel
+import apiClient from '../../lib/axios'
 
 const route = useRoute()
+const router = useRouter()
 const courseId = route.params.id // Grabs the course ID from the URL
 const isSaving = ref(false)
+const isLoading = ref(false)
 
 // Generate unique IDs for the drag-and-drop keys
 const generateId = () => Date.now().toString(36) + Math.random().toString(36).substr(2)
 
 // The Master State: A nested array of sections containing lessons
-const sections = ref([
-  {
-    id: generateId(),
-    title: 'Introduction',
-    lessons: [{ id: generateId(), title: 'Course Welcome', video_url: '' }],
-  },
-])
+const sections = ref([])
+
+// Fetch course data on mount
+const fetchCourse = async () => {
+  isLoading.value = true
+  try {
+    const response = await apiClient.get(`/instructor/courses/${courseId}`)
+    const course = response.data.data
+
+    if (course.sections && course.sections.length > 0) {
+      sections.value = course.sections.map((section) => ({
+        id: `section-${section.id}`,
+        title: section.title,
+        lessons: section.lessons.map((lesson) => ({
+          id: `lesson-${lesson.id}`,
+          title: lesson.title,
+          video_url: lesson.video_url || '',
+        })),
+      }))
+    } else {
+      // Initialize with default section if none exists
+      sections.value = [
+        {
+          id: generateId(),
+          title: 'Introduction',
+          lessons: [{ id: generateId(), title: 'Course Welcome', video_url: '' }],
+        },
+      ]
+    }
+  } catch (error) {
+    console.error('Failed to fetch course:', error)
+    // Initialize with default if fetch fails
+    sections.value = [
+      {
+        id: generateId(),
+        title: 'Introduction',
+        lessons: [{ id: generateId(), title: 'Course Welcome', video_url: '' }],
+      },
+    ]
+  } finally {
+    isLoading.value = false
+  }
+}
 
 // --- Methods ---
 
@@ -251,21 +297,26 @@ const saveCurriculum = async () => {
       })),
     }
 
-    console.log('Sending to Laravel:', JSON.stringify(payload, null, 2))
+    // 2. Call the Laravel API to save the curriculum
+    await apiClient.put(`/instructor/courses/${courseId}/curriculum`, payload)
 
-    // 2. Here is where we will call your Laravel API
-    // await apiClient.put(`/instructor/courses/${courseId}/curriculum`, payload);
-
-    // Simulate network delay for UI test
-    await new Promise((resolve) => setTimeout(resolve, 800))
+    // Show success message
     alert('Curriculum saved successfully!')
+
+    // Optionally redirect back to dashboard
+    router.push('/dashboard/courses')
   } catch (error) {
-    alert('Failed to save curriculum.')
-    console.error(error)
+    console.error('Failed to save curriculum:', error)
+    alert('Failed to save curriculum. Please try again.')
   } finally {
     isSaving.value = false
   }
 }
+
+// Fetch course data on component mount
+onMounted(() => {
+  fetchCourse()
+})
 </script>
 
 <style scoped>

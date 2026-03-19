@@ -10,6 +10,7 @@ const DashboardLayout = () => import('../layouts/DashboardLayout.vue');
 const DashboardView = () => import('../views/DashboardView.vue');
 const CreateCourseView = () => import('../views/courses/CreateCourseView.vue');
 const CurriculumBuilderView = () => import('../views/courses/CurriculumBuilderView.vue');
+const MyCoursesView = () => import('../views/courses/MyCoursesView.vue');
 
 const router = createRouter({
   // Use HTML5 History API for clean URLs (no '#' in the URL)
@@ -34,13 +35,18 @@ const router = createRouter({
           name: 'dashboard',
           component: DashboardView,
         },
+        {
+          path: 'courses',
+          name: 'courses.index',
+          component: MyCoursesView
+        },
         { 
-          path: 'courses/create', // Matches '/dashboard/courses/create'
+          path: 'courses/create', 
           name: 'courses.create', 
           component: CreateCourseView 
         },
         {
-          path: 'courses/:id/curriculum', // Matches '/dashboard/courses/1/curriculum'
+          path: 'courses/:id/curriculum',
           name: 'courses.curriculum',
           component: CurriculumBuilderView
         }

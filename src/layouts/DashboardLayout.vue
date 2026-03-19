@@ -55,8 +55,9 @@
           Overview
         </router-link>
 
-        <a
-          href="#"
+        <router-link
+          to="/dashboard/courses"
+          active-class="bg-brand-800 text-white"
           class="flex items-center px-4 py-3 text-brand-100 hover:bg-brand-800 hover:text-white rounded-lg font-medium transition-colors"
         >
           <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -68,7 +69,7 @@
             ></path>
           </svg>
           My Courses
-        </a>
+        </router-link>
       </nav>
 
       <div class="p-4 border-t border-brand-800">

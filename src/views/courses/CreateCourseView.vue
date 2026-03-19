@@ -187,10 +187,11 @@ const submitCourse = async () => {
 
     // Axios interceptor will automatically attach your Bearer Token.
     // Because we pass `formData`, Axios automatically sets the header to 'multipart/form-data'.
-    await apiClient.post('/instructor/courses', formData)
+    const response = await apiClient.post('/instructor/courses', formData)
 
-    // On success, take them back to the dashboard
-    router.push('/dashboard')
+    // On success, take them to the curriculum builder to add sections and lessons
+    const courseId = response.data.data.id
+    router.push(`/dashboard/courses/${courseId}/curriculum`)
   } catch (error) {
     console.error(error)
     // Handle Laravel Validation Errors (Status 422)
