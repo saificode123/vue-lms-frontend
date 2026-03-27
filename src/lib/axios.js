@@ -5,7 +5,8 @@ import axios from 'axios';
  * Vite exposes environment variables via import.meta.env
  */
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL,
+    // Added a fallback to '/api' just in case the .env variable is missing
+    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api',
     headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -15,13 +16,14 @@ const apiClient = axios.create({
 /**
  * REQUEST INTERCEPTOR
  * Intercepts every outgoing request and injects the Bearer token
- * if the user is currently logged in.
  */
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
         if (token) {
-            config.headers.Authorization = `Bearer ${token}`;
+            // OPTIMIZATION: In Axios 1.x+, headers is an AxiosHeaders object. 
+            // Using the bracket notation or .set() is safer than dot notation.
+            config.headers['Authorization'] = `Bearer ${token}`;
         }
         return config;
     },
@@ -40,16 +42,16 @@ apiClient.interceptors.response.use(
         return response;
     },
     (error) => {
-        // Any status codes that falls outside the range of 2xx cause this function to trigger
+        // Any status codes that fall outside the range of 2xx cause this function to trigger
         if (error.response && error.response.status === 401) {
             // 401 Unauthorized: The token is missing, invalid, or expired.
-            // Clear the stale data and force the user back to the login screen.
             localStorage.removeItem('access_token');
             localStorage.removeItem('user');
             
-            // Redirect to the root (Login page)
+            // Redirect to the login page (assuming your login page is at '/')
+            // We check to ensure we aren't already on the login page to prevent infinite reload loops.
             if (window.location.pathname !== '/') {
-                window.location.href = '/';
+                window.location.href = '/'; 
             }
         }
         
